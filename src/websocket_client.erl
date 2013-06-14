@@ -13,7 +13,7 @@
 -spec start_link(URL :: string(), Handler :: module(), Args :: list()) ->
     {ok, pid()} | {error, term()}.
 start_link(URL, Handler, Args) ->
-  case http_uri:parse(URL, [{scheme_defaults, [{ws,80},{wss,443}]}]) of
+  case http_uri:parse(URL, [{scheme_defaults, [{ws,80},{wss,443},{http,80},{https,443}]}]) of
     {ok, {Protocol, _, Host, Port, Path, Query}} ->
       proc_lib:start_link(?MODULE, ws_client_init,
                [Handler, Protocol, Host, Port, Path ++ Query, Args]);
@@ -35,10 +35,10 @@ cast(Client, Frame) ->
     no_return().
 ws_client_init(Handler, Protocol, Host, Port, Path, Args) ->
     Transport = case Protocol of
-                    wss ->
-                        ssl;
-                    ws ->
-                        gen_tcp
+                    wss -> ssl;
+                    ws -> gen_tcp;
+                    https -> ssl;
+                    http -> gen_tcp
                 end,
     SockReply = case Transport of
                        ssl ->
